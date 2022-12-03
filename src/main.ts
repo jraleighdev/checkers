@@ -25,13 +25,19 @@ const lightPieceColor = 'white';
 let selectedSquare: Square | undefined;
 let pieceTurn: PieceType = PieceType.light;
 
-const drawPiece = (i: number, j: number, color: string) => {
+const drawPiece = (i: number, j: number, color: string, isKing = false) => {
     ctx.beginPath();
     const xLocation = j === 0 ? squareSize / 2 : squareSize * j + squareSize / 2;
     const yLocation = i === 0 ? squareSize / 2 : squareSize * i + squareSize / 2;
     ctx.arc(xLocation, yLocation, pieceRadius, 0, 2 * Math.PI);
     ctx.fillStyle = color;
     ctx.fill();
+    if (isKing) {
+        ctx.font = '40px arial';
+        ctx.fillStyle = color == darkPieceColor ? lightPieceColor : darkPieceColor;
+        ctx.fillText('K', xLocation - 12, yLocation + 14);
+    }
+    
 }
 
 const intitializeGrid = (): Square[][] => {
@@ -41,7 +47,7 @@ const intitializeGrid = (): Square[][] => {
         const squareRow: Square[] = [];
         for (let j = 0; j <= row.length - 1; j++) {
             const item = row[j];
-            const square: Square = { type: item, xLocation: i * squareSize, yLocation: j * squareSize, hasPiece: false, path: new Path2D(), xIndex: j, yIndex: i, pieceType: PieceType.unkown };
+            const square: Square = { type: item, xLocation: i * squareSize, yLocation: j * squareSize, hasPiece: false, path: new Path2D(), xIndex: j, yIndex: i, pieceType: PieceType.unkown, isKing: false };
             square.path.rect(j * squareSize, i * squareSize, squareSize, squareSize);
             ctx.fillStyle = item === SquareType.dark ? darkSquareColor : lightSquareColor;
             ctx.fill(square.path);
@@ -81,7 +87,7 @@ const drawGrid = (xIndex: number, yIndex: number, color?: string) => {
             ctx.fill(square.path);
 
             if (square.hasPiece) {
-                drawPiece(i, j, square.pieceType == PieceType.light ? lightPieceColor : darkPieceColor);
+                drawPiece(i, j, square.pieceType == PieceType.light ? lightPieceColor : darkPieceColor, square.isKing);
             }
         }
     }
@@ -95,6 +101,16 @@ const switchPieceTurn = () => {
     }
 } 
 
+const checkKingStatus = (currentSquare: Square) => {
+    if (currentSquare.isKing || !currentSquare.hasPiece) return;
+
+    const kingIndexLocation = currentSquare.pieceType == PieceType.dark ? gridDefinition.length - 1 : 0;
+
+    if (currentSquare.yIndex == kingIndexLocation) {
+        currentSquare.isKing = true;
+    }
+}
+
 const pieceMovementLogic = (pieceType: PieceType, currentSquare: Square, selectedSquare: Square) => {
     const squareToRightIndex = selectedSquare.xIndex + 1;
     const squareToLeftIndex = selectedSquare.xIndex - 1;
@@ -104,6 +120,8 @@ const pieceMovementLogic = (pieceType: PieceType, currentSquare: Square, selecte
 
     // Dark pieces will check y greater than their own
     // Light Pieces will check y values less that their own
+    // TODO King logic will require pieces to move in either direction.
+    // TODO Switch to drawings or just put K on the piece?
     if (pieceType == PieceType.dark ? currentSquare.yIndex > selectedSquare.yIndex : currentSquare.yIndex < selectedSquare.yIndex) {
         // movement logic 
         if (currentSquare.xIndex == squareToRightIndex || currentSquare.xIndex == squareToLeftIndex) {
@@ -111,6 +129,8 @@ const pieceMovementLogic = (pieceType: PieceType, currentSquare: Square, selecte
             currentSquare.pieceType = selectedSquare.pieceType;
             selectedSquare.hasPiece = false;
             selectedSquare = currentSquare;
+            currentSquare.isKing = selectedSquare.isKing
+            checkKingStatus(currentSquare);
             drawGrid(currentSquare.xIndex, currentSquare.yIndex);
             switchPieceTurn();
         // jump logic
@@ -123,6 +143,8 @@ const pieceMovementLogic = (pieceType: PieceType, currentSquare: Square, selecte
                 itemToCheck.hasPiece = false;
                 selectedSquare.hasPiece = false;
                 selectedSquare = currentSquare;
+                currentSquare.isKing = selectedSquare.isKing
+                checkKingStatus(currentSquare)
                 drawGrid(currentSquare.xIndex, currentSquare.yIndex);
             }
             switchPieceTurn();

@@ -10,4 +10,5 @@ export interface Square {
     xIndex: number;
     yIndex: number;
     pieceType: PieceType;
+    isKing: boolean;
 }
