@@ -33,4 +33,13 @@ export class Piece {
             this.context.fillText('K', xLocation - 12, yLocation + 14);
         }
     }
+
+    public move(x: number, y: number): void {
+        this.xIndex = x;
+        this.yindex = y;
+    }
+
+    public isDark = () => this.type == PieceType.dark;
+
+    public isLight = () => this.type == PieceType.light;
 }

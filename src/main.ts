@@ -1,3 +1,6 @@
+import { Actions } from "./models/Actions";
+import { SquareColor } from "./models/Colors";
+import { Piece } from "./models/Piece";
 import { PieceType } from "./models/PieceType";
 import { Square } from "./models/Square";
 import { SquareType } from "./models/SquareType";
@@ -18,27 +21,10 @@ const gridDefinition: number[][] = [
 
 const squareSize = 75;
 const pieceRadius = (squareSize - 20) / 2;
-const darkSquareColor = 'brown';
-const lightSquareColor = 'tan';
-const darkPieceColor = 'black';
-const lightPieceColor = 'white';
 let selectedSquare: Square | undefined;
 let pieceTurn: PieceType = PieceType.light;
-
-const drawPiece = (i: number, j: number, color: string, isKing = false) => {
-    ctx.beginPath();
-    const xLocation = j === 0 ? squareSize / 2 : squareSize * j + squareSize / 2;
-    const yLocation = i === 0 ? squareSize / 2 : squareSize * i + squareSize / 2;
-    ctx.arc(xLocation, yLocation, pieceRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = color;
-    ctx.fill();
-    if (isKing) {
-        ctx.font = '40px arial';
-        ctx.fillStyle = color == darkPieceColor ? lightPieceColor : darkPieceColor;
-        ctx.fillText('K', xLocation - 12, yLocation + 14);
-    }
-    
-}
+const lightPieces: Piece[] = [];
+const darkPieces: Piece[] = [];
 
 const intitializeGrid = (): Square[][] => {
     const tempGrid: Square[][] = [];
@@ -47,22 +33,22 @@ const intitializeGrid = (): Square[][] => {
         const squareRow: Square[] = [];
         for (let j = 0; j <= row.length - 1; j++) {
             const item = row[j];
-            const square: Square = { type: item, xLocation: i * squareSize, yLocation: j * squareSize, hasPiece: false, path: new Path2D(), xIndex: j, yIndex: i, pieceType: PieceType.unkown, isKing: false };
+            const square: Square = new Square(item, i * squareSize, j * squareSize, new Path2D(), j, i);
             square.path.rect(j * squareSize, i * squareSize, squareSize, squareSize);
-            ctx.fillStyle = item === SquareType.dark ? darkSquareColor : lightSquareColor;
+            ctx.fillStyle = item === SquareType.dark ? SquareColor.dark : SquareColor.light;
             ctx.fill(square.path);
             squareRow.push(square);
 
             if (item === SquareType.dark) {
                 if (i <= 2) {
-                    square.hasPiece = true;
-                    square.pieceType = PieceType.dark;
-                    drawPiece(i, j, darkPieceColor);
+                    const darkPiece = new Piece(PieceType.dark, j, i, squareSize, pieceRadius, ctx);
+                    darkPiece.draw();
+                    darkPieces.push(darkPiece);
                 }
-                if (i >= 5) {
-                    square.hasPiece = true;
-                    square.pieceType = PieceType.light;
-                    drawPiece(i, j, lightPieceColor);
+                if (i >= 5) { 
+                    const lightPiece = new Piece(PieceType.light, j, i, squareSize, pieceRadius, ctx);
+                    lightPiece.draw();
+                    lightPieces.push(lightPiece);
                 }
             }
         }
@@ -73,24 +59,62 @@ const intitializeGrid = (): Square[][] => {
 
 const gridImplemention: Square[][] = intitializeGrid();
 
-const drawGrid = (xIndex: number, yIndex: number, color?: string) => {
+
+const drawPieces = () => {
+    lightPieces.forEach(x => x.draw());
+    darkPieces.forEach(x => x.draw());
+}
+
+const allPieces = (): Piece[] => {
+    return [...lightPieces, ...darkPieces];
+}
+
+const getAllSquaresFlat = (): Square[] => {
+    const tempArray: Square[] = [];
+    for (let i = 0; i <= gridDefinition.length - 1; i++) {
+        const row = gridImplemention[i];
+        for (let j = 0; j <= row.length - 1; j++) {
+            tempArray.push(row[j])
+        }
+    }
+    return tempArray;
+}
+
+const allSquaresFlat: Square[] = getAllSquaresFlat();
+
+const clearActions = () => {
+    allSquaresFlat.forEach(x => x.applyAction(Actions.none));
+}
+
+const findPieceByIndex = (xIndex: number, yIndex: number): Piece | undefined => {
+    const p = allPieces();
+    console.log(p);
+    return allPieces().find(piece => piece.xIndex === xIndex && piece.yindex === yIndex);
+}
+
+const getPieceFromSquare = (square: Square): Piece | undefined => {
+    return findPieceByIndex(square.xIndex, square.yIndex);
+}
+
+const getSquareFromPiece = (piece: Piece): Square | undefined => {
+    return allSquaresFlat.find(square => square.xIndex == piece.xIndex && square.yIndex == piece.yindex);
+}
+
+const drawGrid = () => {
     for (let i = 0; i <= gridImplemention.length - 1; i++) {
         const row = gridImplemention[i];
         for (let j = 0; j <= row.length - 1; j++) {
-            const item = gridDefinition[i][j];
             const square = row[j];
-            ctx.fillStyle = item === SquareType.dark ? darkSquareColor : lightSquareColor;
-            if (i == yIndex && j == xIndex && color) {
-                ctx.fillStyle = color;
-            }
+            ctx.fillStyle = square.color;
             square.path.rect(j * squareSize, i * squareSize, squareSize, squareSize);
             ctx.fill(square.path);
-
-            if (square.hasPiece) {
-                drawPiece(i, j, square.pieceType == PieceType.light ? lightPieceColor : darkPieceColor, square.isKing);
-            }
         }
     }
+}
+
+const draw = () => {
+    drawGrid();
+    drawPieces();
 }
 
 const switchPieceTurn = () => {
@@ -99,53 +123,56 @@ const switchPieceTurn = () => {
     } else {
         pieceTurn = PieceType.dark;
     }
-} 
+}
 
-const checkKingStatus = (currentSquare: Square) => {
-    if (currentSquare.isKing || !currentSquare.hasPiece) return;
+const checkKingStatus = (piece: Piece) => {
+    if (piece && piece.isKing) return;
 
-    const kingIndexLocation = currentSquare.pieceType == PieceType.dark ? gridDefinition.length - 1 : 0;
+    const kingIndexLocation = piece.type == PieceType.dark ? gridDefinition.length - 1 : 0;
 
-    if (currentSquare.yIndex == kingIndexLocation) {
-        currentSquare.isKing = true;
+    if (piece.yindex == kingIndexLocation) {
+        piece.isKing = true;
     }
 }
 
-const pieceMovementLogic = (pieceType: PieceType, currentSquare: Square, selectedSquare: Square) => {
+const pieceMovementLogic = (piece: Piece, currentSquare: Square) => {
+    if (!piece) return;
+    if (!selectedSquare) return;
+
     const squareToRightIndex = selectedSquare.xIndex + 1;
     const squareToLeftIndex = selectedSquare.xIndex - 1;
     const squareToSecondRightIndex = selectedSquare.xIndex + 2;
     const squareToSecondLeftIndex = selectedSquare.xIndex - 2;
-    const squareToCheckYIndex = pieceType == PieceType.dark ? selectedSquare.yIndex + 1: selectedSquare.yIndex - 1;
+    const squareToCheckYIndex = piece.type == PieceType.dark ? selectedSquare.yIndex + 1 : selectedSquare.yIndex - 1;
 
     // Dark pieces will check y greater than their own
     // Light Pieces will check y values less that their own
     // TODO King logic will require pieces to move in either direction.
     // TODO Switch to drawings or just put K on the piece?
-    if (pieceType == PieceType.dark ? currentSquare.yIndex > selectedSquare.yIndex : currentSquare.yIndex < selectedSquare.yIndex) {
+    if (piece.type == PieceType.dark ? currentSquare.yIndex > selectedSquare.yIndex : currentSquare.yIndex < selectedSquare.yIndex) {
         // movement logic 
         if (currentSquare.xIndex == squareToRightIndex || currentSquare.xIndex == squareToLeftIndex) {
-            currentSquare.hasPiece = true;
-            currentSquare.pieceType = selectedSquare.pieceType;
-            selectedSquare.hasPiece = false;
             selectedSquare = currentSquare;
-            currentSquare.isKing = selectedSquare.isKing
-            checkKingStatus(currentSquare);
-            drawGrid(currentSquare.xIndex, currentSquare.yIndex);
+            piece.move(currentSquare.xIndex, currentSquare.yIndex);
+            checkKingStatus(piece);
+            draw();
             switchPieceTurn();
-        // jump logic
+            // jump logic
         } else if (currentSquare.xIndex == squareToSecondRightIndex || currentSquare.xIndex == squareToSecondLeftIndex) {
             const squareToJump = currentSquare.xIndex == squareToSecondRightIndex ? squareToRightIndex : squareToLeftIndex;
-            const itemToCheck = gridImplemention[squareToCheckYIndex][squareToJump];
-            if (itemToCheck.hasPiece && itemToCheck.pieceType != pieceType) {
-                currentSquare.hasPiece = true;
-                currentSquare.pieceType = selectedSquare.pieceType;
-                itemToCheck.hasPiece = false;
-                selectedSquare.hasPiece = false;
+            const pieceToJump = findPieceByIndex(squareToJump, squareToCheckYIndex);
+            if (pieceToJump && piece.type != pieceToJump.type) {
                 selectedSquare = currentSquare;
-                currentSquare.isKing = selectedSquare.isKing
-                checkKingStatus(currentSquare)
-                drawGrid(currentSquare.xIndex, currentSquare.yIndex);
+                piece.move(currentSquare.xIndex, currentSquare.yIndex);
+                checkKingStatus(piece)
+                if (pieceToJump.isDark()) {
+                    const index = darkPieces.indexOf(pieceToJump);
+                    darkPieces.splice(index, 1);
+                } else if (pieceToJump.isLight()) {
+                    const index = lightPieces.indexOf(pieceToJump);
+                    lightPieces.splice(index, 1);
+                }
+                draw();
             }
             switchPieceTurn();
         }
@@ -155,15 +182,15 @@ const pieceMovementLogic = (pieceType: PieceType, currentSquare: Square, selecte
 /* Events */
 canvas.addEventListener('mousemove', (event: MouseEvent) => {
     if (selectedSquare) return;
+    clearActions();
     let currentPiece: Square;
     for (let i = 0; i <= gridImplemention.length - 1; i++) {
         const row = gridImplemention[i];
         for (let j = 0; j <= row.length - 1; j++) {
             currentPiece = row[j];
-
             if (ctx.isPointInPath(currentPiece.path, event.offsetX, event.offsetY) && currentPiece.hasPiece) {
-
-                drawGrid(currentPiece.xIndex, currentPiece.yIndex, 'green');
+                currentPiece.applyAction(Actions.hover);
+                draw();
             }
         }
     }
@@ -177,17 +204,25 @@ canvas.addEventListener('click', (event: MouseEvent) => {
         for (let j = 0; j <= row.length - 1; j++) {
             currentSquare = row[j];
             if (ctx.isPointInPath(currentSquare.path, event.offsetX, event.offsetY)) {
-                if (selectedSquare && selectedSquare.pieceType == pieceTurn) {
-                    if (currentSquare.hasPiece) {
+                clearActions();       
+                const piece = getPieceFromSquare(currentSquare);
+                if (selectedSquare && getPieceFromSquare(selectedSquare)) {
+                    if (piece) {
                         selectedSquare = currentSquare;
-                        drawGrid(currentSquare.xIndex, currentSquare.yIndex, selectedSquare.pieceType == pieceTurn ? 'green' : 'red');
+                        selectedSquare.applyAction(piece.type == pieceTurn ? Actions.valid : Actions.invalid);
+                        draw();
                     } else {
-                        pieceMovementLogic(selectedSquare.pieceType, currentSquare, selectedSquare);        
+                        const piece: Piece | undefined = getPieceFromSquare(selectedSquare);
+                        if (piece && piece.type == pieceTurn) {
+                            pieceMovementLogic(piece, currentSquare);
+                        }
                     }
-                } else if (currentSquare.hasPiece) {
+                } else if (piece) {
                     console.log(currentSquare);
                     selectedSquare = currentSquare;
-                    drawGrid(currentSquare.xIndex, currentSquare.yIndex, selectedSquare.pieceType == pieceTurn ? 'green' : 'red');
+                    const piece: Piece | undefined = getPieceFromSquare(currentSquare);
+                    selectedSquare.applyAction(piece?.type == pieceTurn ? Actions.valid : Actions.invalid);
+                    draw();
                 }
             }
         }

@@ -5,5 +5,9 @@ export enum PieceColor {
 
 export enum SquareColor {
     dark = 'brown',
-    light = 'tan'
+    light = 'tan',
+    hover = 'green',
+    selectedValid = 'orange',
+    selectedInvalid = 'red'
 }
+
