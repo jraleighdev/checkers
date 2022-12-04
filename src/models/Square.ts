@@ -1,5 +1,6 @@
 import { Actions } from "./Actions";
 import { SquareColor } from "./Colors";
+import { Point } from "./Point";
 import { SquareType } from "./SquareType";
 
 export class Square {
@@ -10,15 +11,15 @@ export class Square {
 
     constructor(
         public type: SquareType,
-        public xLocation: number,
-        public yLocation: number,
         public path: Path2D,
-        public xIndex: number,
-        public yIndex: number,
-        // public hasPiece: boolean,
+        public point: Point,
     ) {
         this.color = type == SquareType.dark ? SquareColor.dark : SquareColor.light;
         this.initialColor = this.color;
+    }
+
+    public isMatch(pointToCheck: Point): boolean {
+        return this.point.x == pointToCheck.x && this.point.y == pointToCheck.y;
     }
 
     applyAction(action: Actions): void {

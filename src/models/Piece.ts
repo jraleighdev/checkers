@@ -1,5 +1,6 @@
 import { PieceColor } from "./Colors";
 import { PieceType } from "./PieceType";
+import { Point } from "./Point";
 
 export class Piece {
 
@@ -11,8 +12,7 @@ export class Piece {
 
     constructor(
         public type: PieceType,
-        public xIndex: number,
-        public yindex: number,
+        public point: Point,
         public squareSize: number,
         public radius: number,
         public context: CanvasRenderingContext2D
@@ -22,8 +22,8 @@ export class Piece {
 
     public draw(): void {
         this.context.beginPath();
-        const xLocation = this.xIndex === 0 ? this.squareSize / 2 : this.squareSize * this.xIndex + this.squareSize / 2;
-        const yLocation = this.yindex === 0 ? this.squareSize / 2 : this.squareSize * this.yindex + this.squareSize / 2;
+        const xLocation = this.point.x === 0 ? this.squareSize / 2 : this.squareSize * this.point.x + this.squareSize / 2;
+        const yLocation = this.point.y === 0 ? this.squareSize / 2 : this.squareSize * this.point.y + this.squareSize / 2;
         this.context.arc(xLocation, yLocation, this.radius, 0, 2 * Math.PI);
         this.context.fillStyle = this.color;
         this.context.fill();
@@ -34,9 +34,12 @@ export class Piece {
         }
     }
 
-    public move(x: number, y: number): void {
-        this.xIndex = x;
-        this.yindex = y;
+    public move(newPoint: Point): void {
+        this.point = newPoint;
+    }
+
+    public isMatch(pointToCheck: Point): boolean {
+        return this.point.x == pointToCheck.x && this.point.y == pointToCheck.y;
     }
 
     public isDark = () => this.type == PieceType.dark;
