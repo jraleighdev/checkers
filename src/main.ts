@@ -18,9 +18,9 @@ const gridDefinition: number[][] = [
    /*6*/[1, 0, 1, 0, 1, 0, 1, 0],
    /*7*/[0, 1, 0, 1, 0, 1, 0, 1],
    /*8*/[1, 0, 1, 0, 1, 0, 1, 0],
-]
+];
 
-const squareSize = 75;
+const squareSize = 60;
 const pieceRadius = (squareSize - 20) / 2;
 let selectedSquare: Square | undefined;
 let pieceTurn: PieceType = PieceType.light;
