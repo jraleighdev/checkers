@@ -155,7 +155,7 @@ const pieceMovementLogic = (piece: Piece, currentSquare: Square) => {
     if (piece.isKing) {
         pieceYCheck = currentSquare.point.y > selectedSquare.point.y || currentSquare.point.y < selectedSquare.point.y;
     } else {
-        pieceYCheck = piece.type == PieceType.dark 
+        pieceYCheck = piece.isDark()  
                         ? currentSquare.point.y > selectedSquare.point.y 
                         : currentSquare.point.y < selectedSquare.point.y
     }
