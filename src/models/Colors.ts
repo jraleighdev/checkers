@@ -8,6 +8,7 @@ export enum SquareColor {
     light = 'tan',
     hover = 'green',
     selectedValid = 'orange',
-    selectedInvalid = 'red'
+    selectedInvalid = 'red',
+    possibleMove = 'yellow'
 }
 

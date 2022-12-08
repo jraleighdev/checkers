@@ -42,7 +42,11 @@ export class Piece {
         return this.point.x == pointToCheck.x && this.point.y == pointToCheck.y;
     }
 
-    public isDark = () => this.type == PieceType.dark;
+    get isDark(): boolean {
+        return this.type == PieceType.dark;
+    }
 
-    public isLight = () => this.type == PieceType.light;
+    get isLight(): boolean {
+        return this.type == PieceType.light;
+    }
 }
