@@ -71,10 +71,6 @@ const drawPieces = () => {
     darkPieces.forEach(x => x.draw());
 }
 
-const allPieces = (): Piece[] => {
-    return [...lightPieces, ...darkPieces];
-}
-
 const getAllSquaresFlat = (): Square[] => {
     const tempArray: Square[] = [];
     for (let i = 0; i <= gridDefinition.length - 1; i++) {
@@ -93,7 +89,8 @@ const clearActions = () => {
 }
 
 const findPieceByIndex = (point: Point): Piece | undefined => {
-    return allPieces().find(piece => piece.isMatch(point));
+    const allPieces = [...lightPieces, ...darkPieces];
+    return allPieces.find(piece => piece.isMatch(point));
 }
 
 const findSquareByIndex = (point: Point): Square | undefined => {
@@ -143,16 +140,6 @@ const checkKingStatus = (piece: Piece) => {
     if (piece.point.y == kingIndexLocation) {
         piece.isKing = true;
     }
-}
-
-const findMidPoint = (point1: Point, point2: Point): Point => {
-    const midX = (point1.x + point2.x) / 2;
-    const midY = (point1.y + point2.y) / 2;
-    return { x: midX, y: midY };
-}
-
-const clearSelections = () => {
-    possibleMoves = [];
 }
 
 const checkForMultipleJumps = (point: Point, xDirection: SearchDirection, yDirection: SearchDirection, group: MoveGroup): Move[] => {
